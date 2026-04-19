@@ -1,100 +1,129 @@
-import Image from "next/image";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/utils";
 
-export default function Home() {
+export const revalidate = 60;
+
+async function getRestaurants() {
+  return prisma.restaurant.findMany({
+    include: {
+      menuItems: { where: { available: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+}
+
+function avgPrice(prices: number[]) {
+  if (!prices.length) return 0;
+  return prices.reduce((a, b) => a + b, 0) / prices.length;
+}
+
+export default async function HomePage() {
+  const restaurants = await getRestaurants();
+
+  const ranked = restaurants
+    .map((r) => ({
+      ...r,
+      avg: avgPrice(r.menuItems.map((m) => m.price)),
+      min: Math.min(...r.menuItems.map((m) => m.price)),
+    }))
+    .sort((a, b) => a.avg - b.avg);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <span className="font-bold text-lg tracking-tight">en-ucuz.tr</span>
+          <Link
+            href="/rezervasyon"
+            className="text-sm bg-orange-500 text-white px-4 py-2 rounded-lg font-medium"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Rezervasyon Yap
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </header>
+
+      {/* Hero */}
+      <section className="bg-orange-500 text-white px-4 py-12 text-center">
+        <h1 className="text-3xl font-bold mb-2">Şeffaf Menü Fiyatları</h1>
+        <p className="text-orange-100 text-base mb-6">
+          Restoranlar listede üst sırada çıkmak için fiyatlarını düşürüyor. Kazanan sen.
+        </p>
+        <Link
+          href="/menu"
+          className="inline-block bg-white text-orange-600 font-semibold px-6 py-3 rounded-xl text-sm"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+          Menüyü Gör →
+        </Link>
+      </section>
+
+      {/* How it works */}
+      <section className="max-w-3xl mx-auto px-4 py-8">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Nasıl Çalışır?
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: "📋", title: "Listele", desc: "Tüm menü fiyatları açık" },
+            { icon: "📉", title: "Rekabet", desc: "Ucuz olan üst sıraya çıkar" },
+            { icon: "🏆", title: "Kazan", desc: "En uygun fiyatı seç" },
+          ].map((item) => (
+            <div key={item.title} className="bg-white rounded-xl p-4 text-center border border-gray-100">
+              <div className="text-2xl mb-1">{item.icon}</div>
+              <div className="font-semibold text-sm">{item.title}</div>
+              <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Restaurant Rankings */}
+      <section className="max-w-3xl mx-auto px-4 pb-12">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Fiyat Sıralaması
+        </h2>
+        <div className="space-y-3">
+          {ranked.map((r, i) => (
+            <div
+              key={r.id}
+              className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4"
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                  i === 0
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold truncate">{r.name}</div>
+                <div className="text-xs text-gray-500 truncate">{r.address}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{r.phone}</div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className="text-sm font-bold text-orange-600">
+                  ort. {formatPrice(r.avg)}
+                </div>
+                <div className="text-xs text-green-600">
+                  min {formatPrice(r.min)}
+                </div>
+                <Link
+                  href="/menu"
+                  className="text-xs text-blue-600 underline mt-1 block"
+                >
+                  Menüyü Gör
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="text-center text-xs text-gray-400 pb-8">
+        en-ucuz.tr — Fiyat şeffaflığı için
       </footer>
     </div>
   );
