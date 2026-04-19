@@ -6,10 +6,6 @@ export function formatPrice(price: number) {
   }).format(price);
 }
 
-export function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("tr-TR");
-}
-
 export function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
 }

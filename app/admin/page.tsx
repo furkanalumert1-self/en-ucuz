@@ -3,5 +3,5 @@ import { getSession } from "@/lib/auth";
 
 export default async function AdminPage() {
   const isAdmin = await getSession();
-  redirect(isAdmin ? "/admin/rezervasyonlar" : "/admin/login");
+  redirect(isAdmin ? "/admin/fiyatlar" : "/admin/login");
 }
